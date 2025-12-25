@@ -102,3 +102,7 @@ Edit `taxonomy_mapping.csv` to add or modify tags and their corresponding taxono
 
 - `POST /scrape` - Scrape items by tag
 - `GET /health` - Health check endpoint
+
+## Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for instructions on deploying this API to a production server with Nginx and systemd.
