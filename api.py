@@ -1,9 +1,23 @@
 from flask import Flask, request, jsonify
+from flask_httpauth import HTTPBasicAuth
 import requests
 import csv
 import time
+import os
 
 app = Flask(__name__)
+auth = HTTPBasicAuth()
+
+# Authentication credentials (use environment variables in production)
+API_USERNAME = os.getenv('API_USERNAME', 'arthur')
+API_PASSWORD = os.getenv('API_PASSWORD', 'changeme123')
+
+@auth.verify_password
+def verify_password(username, password):
+    """Verify username and password."""
+    if username == API_USERNAME and password == API_PASSWORD:
+        return username
+    return None
 
 # Load taxonomy mapping from CSV
 def load_taxonomy_mapping():
@@ -86,6 +100,7 @@ def fetch_roblox_items(taxonomy_id, target_count=500):
     return all_ids[:target_count]
 
 @app.route('/scrape', methods=['POST'])
+@auth.login_required
 def scrape_items():
     """
     API endpoint to scrape Roblox catalog items by tag.

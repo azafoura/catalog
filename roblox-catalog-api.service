@@ -8,6 +8,8 @@ User=www-data
 Group=www-data
 WorkingDirectory=/var/www/catalog
 Environment="PATH=/var/www/catalog/venv/bin"
+Environment="API_USERNAME=admin"
+Environment="API_PASSWORD=changeme123"
 ExecStart=/var/www/catalog/venv/bin/gunicorn --workers 4 --bind 127.0.0.1:5000 api:app
 Restart=always
 RestartSec=10

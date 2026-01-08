@@ -52,7 +52,22 @@ pip install -r requirements.txt
 pip install gunicorn  # Production WSGI server
 ```
 
-### 5. Configure Systemd Service
+### 5. Configure Environment Variables
+
+Set authentication credentials:
+
+```bash
+# Create environment file
+sudo nano /etc/environment
+
+# Add these lines (replace with strong credentials):
+API_USERNAME="your_secure_username"
+API_PASSWORD="your_secure_password"
+
+# Or add to the systemd service file directly (see step 6)
+```
+
+### 6. Configure Systemd Service
 
 ```bash
 # Copy service file
@@ -60,7 +75,10 @@ sudo cp roblox-catalog-api.service /etc/systemd/system/
 
 # Edit the service file to match your setup
 sudo nano /etc/systemd/system/roblox-catalog-api.service
-# Update User, Group, and WorkingDirectory if needed
+# Update User, Group, WorkingDirectory if needed
+# Add Environment variables for authentication:
+#   Environment="API_USERNAME=your_username"
+#   Environment="API_PASSWORD=your_password"
 
 # Set proper ownership
 sudo chown -R www-data:www-data /var/www/catalog
@@ -76,7 +94,7 @@ sudo systemctl start roblox-catalog-api
 sudo systemctl status roblox-catalog-api
 ```
 
-### 6. Configure Nginx
+### 7. Configure Nginx
 
 ```bash
 # Copy nginx configuration
@@ -96,17 +114,18 @@ sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-### 7. Configure Firewall
+### 8. Configure Firewall
 
 ```bash
 sudo ufw allow 'Nginx Full'
 sudo ufw enable
 ```
 
-### 8. Test the API
+### 9. Test the API
 
 ```bash
 curl -X POST http://your-domain.com/scrape \
+  -u your_username:your_password \
   -H "Content-Type: application/json" \
   -d '{"tag": "Hair"}'
 ```
@@ -237,15 +256,17 @@ proxy_read_timeout 180s;
 
 ## Security Considerations
 
-1. **Firewall**: Only allow necessary ports (80, 443, SSH)
-2. **Rate Limiting**: Configured in nginx to prevent abuse
-3. **User Permissions**: Service runs as `www-data` with limited privileges
-4. **SSL**: Always use HTTPS in production
-5. **API Keys**: Consider adding authentication for production use
-6. **CORS**: Restrict origins in production (currently allows all)
+1. **Authentication**: Basic auth is enabled - use strong credentials and HTTPS
+2. **Firewall**: Only allow necessary ports (80, 443, SSH)
+3. **Rate Limiting**: Configured in nginx to prevent abuse
+4. **User Permissions**: Service runs as `www-data` with limited privileges
+5. **SSL**: Always use HTTPS in production to protect credentials
+6. **Environment Variables**: Store credentials securely, never in code
+7. **CORS**: Restrict origins in production (currently allows all)
 
 ## Production Checklist
 
+- [ ] Strong authentication credentials set
 - [ ] SSL certificate installed
 - [ ] Domain configured
 - [ ] Firewall rules set
@@ -253,6 +274,5 @@ proxy_read_timeout 180s;
 - [ ] Service auto-starts on boot
 - [ ] Logs monitored
 - [ ] Backups configured
-- [ ] Authentication added (if needed)
 - [ ] CORS properly configured
 - [ ] Error handling tested

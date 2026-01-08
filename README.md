@@ -18,6 +18,26 @@ pip install -r requirements.txt
 
 ## Usage
 
+### Configure Authentication (Optional)
+
+By default, the API uses basic authentication with:
+- Username: `admin`
+- Password: `changeme123`
+
+To change credentials, set environment variables:
+
+```bash
+export API_USERNAME=your_username
+export API_PASSWORD=your_password
+```
+
+Or create a `.env` file (not recommended for production):
+
+```bash
+cp .env.example .env
+# Edit .env with your credentials
+```
+
 ### Start the server
 
 ```bash
@@ -30,6 +50,7 @@ The server will run on `http://localhost:5000`
 
 ```bash
 curl -X POST http://localhost:5000/scrape \
+  -u admin:changeme123 \
   -H "Content-Type: application/json" \
   -d '{"tag": "Hair"}'
 ```
@@ -38,6 +59,7 @@ Or with accessories:
 
 ```bash
 curl -X POST http://localhost:5000/scrape \
+  -u admin:changeme123 \
   -H "Content-Type: application/json" \
   -d '{"tag": "Face (Accessory)"}'
 ```
@@ -100,8 +122,8 @@ Edit `taxonomy_mapping.csv` to add or modify tags and their corresponding taxono
 
 ## Endpoints
 
-- `POST /scrape` - Scrape items by tag
-- `GET /health` - Health check endpoint
+- `POST /scrape` - Scrape items by tag (requires authentication)
+- `GET /health` - Health check endpoint (no authentication required)
 
 ## Deployment
 
