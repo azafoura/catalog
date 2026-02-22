@@ -7,8 +7,10 @@ A Python Flask API that scrapes Roblox catalog items by tag and returns item IDs
 - Accepts requests with a tag in the payload (head, shirt, pants, etc.)
 - Scrapes data from Roblox catalog API
 - Handles pagination automatically using `nextPageCursor`
-- Returns the first 500 item IDs
-- Uses 1-second delay between paginated requests
+- **Configurable result limit** — request any number of assets (default 500)
+- **End-detection** — stops early when all items of a category have been collected, response includes `reached_end: true`
+- **24-hour in-memory cache** — repeat requests are served instantly; the response includes `cached: true/false`
+- Uses 1-second delay between paginated requests to avoid rate-limiting
 
 ## Installation
 
@@ -21,7 +23,7 @@ pip install -r requirements.txt
 ### Configure Authentication (Optional)
 
 By default, the API uses basic authentication with:
-- Username: `admin`
+- Username: `arthur`
 - Password: `changeme123`
 
 To change credentials, set environment variables:
@@ -29,13 +31,6 @@ To change credentials, set environment variables:
 ```bash
 export API_USERNAME=your_username
 export API_PASSWORD=your_password
-```
-
-Or create a `.env` file (not recommended for production):
-
-```bash
-cp .env.example .env
-# Edit .env with your credentials
 ```
 
 ### Start the server
@@ -48,30 +43,52 @@ The server will run on `http://localhost:5000`
 
 ### Make a request
 
+Basic request (defaults to 500 items):
+
 ```bash
 curl -X POST http://localhost:5000/scrape \
-  -u admin:changeme123 \
+  -u arthur:changeme123 \
   -H "Content-Type: application/json" \
   -d '{"tag": "Hair"}'
 ```
 
-Or with accessories:
+Request with a custom limit (e.g. grab all faces, up to 10 000):
 
 ```bash
 curl -X POST http://localhost:5000/scrape \
-  -u admin:changeme123 \
+  -u arthur:changeme123 \
   -H "Content-Type: application/json" \
-  -d '{"tag": "Face (Accessory)"}'
+  -d '{"tag": "Classic Faces", "limit": 10000}'
 ```
+
+### Request payload
+
+| Field   | Type   | Required | Default | Description                          |
+|---------|--------|----------|---------|--------------------------------------|
+| `tag`   | string | yes      | —       | Category tag (see list below)        |
+| `limit` | int    | no       | 500     | Max number of asset IDs to retrieve  |
 
 ### Response format
 
 ```json
 {
-  "ids": [123456, 789012, ...],
-  "count": 500,
-  "tag": "Hair"
+  "ids": [123456, 789012],
+  "count": 487,
+  "tag": "Classic Faces",
+  "limit": 10000,
+  "reached_end": true,
+  "cached": false
 }
+```
+
+| Field         | Description                                                         |
+|---------------|---------------------------------------------------------------------|
+| `ids`         | Array of item IDs                                                   |
+| `count`       | Number of IDs returned                                              |
+| `tag`         | The tag that was requested                                          |
+| `limit`       | The limit that was used                                             |
+| `reached_end` | `true` when every available item in the category has been collected |
+| `cached`      | `true` when the response was served from the 24-hour cache          |
 ```
 
 ## Available Tags
@@ -111,19 +128,20 @@ Edit `taxonomy_mapping.csv` to add or modify tags and their corresponding taxono
 
 ## How it works
 
-1. API receives a POST request with a tag in the payload (e.g., "Hair", "Face (Accessory)")
-2. Looks up the corresponding taxonomy ID from `taxonomy_mapping.csv`
-3. Makes requests to Roblox catalog API with limit=120 (maximum allowed by Roblox)
-4. If fewer than 500 results, uses `nextPageCursor` to fetch additional pages
-5. Waits 1 second between paginated requests to avoid rate limiting
-6. Returns the first 500 item IDs collected in order
+1. API receives a POST request with a tag and optional limit
+2. Checks the 24-hour in-memory cache — if a matching result exists, returns it immediately
+3. Looks up the corresponding taxonomy ID from `taxonomy_mapping.csv`
+4. Makes requests to Roblox catalog API with limit=120 (maximum allowed by Roblox)
+5. Uses `nextPageCursor` to fetch additional pages until the requested limit is reached **or** there are no more items
+6. Waits 1 second between paginated requests to avoid rate limiting
+7. Caches the result and returns it
 
 **Note:** Tags are case-sensitive and must match exactly as listed in the CSV file (including spaces and parentheses).
 
 ## Endpoints
 
-- `POST /scrape` - Scrape items by tag (requires authentication)
-- `GET /health` - Health check endpoint (no authentication required)
+- `POST /scrape` — Scrape items by tag (requires authentication)
+- `GET /health` — Health check endpoint (no authentication required)
 
 ## Deployment
 
