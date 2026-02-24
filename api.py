@@ -15,7 +15,7 @@ _cache: dict = {}
 
 # Authentication credentials (use environment variables in production)
 API_USERNAME = os.getenv('API_USERNAME', 'arthur')
-API_PASSWORD = os.getenv('API_PASSWORD', 'changeme123')
+API_PASSWORD = os.getenv('API_PASSWORD', 'arthur')
 
 @auth.verify_password
 def verify_password(username, password):
